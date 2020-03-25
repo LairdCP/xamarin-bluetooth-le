@@ -238,6 +238,6 @@ namespace Plugin.BLE.Abstractions
         protected abstract void DisconnectDeviceNative(IDevice device);
 
         public abstract Task<IDevice> ConnectToKnownDeviceAsync(Guid deviceGuid, ConnectParameters connectParameters = default, CancellationToken cancellationToken = default);
-        public abstract IReadOnlyList<IDevice> GetSystemConnectedOrPairedDevices(Guid[] services = null);
+        public abstract IReadOnlyList<IDevice> GetSystemConnectedOrPairedDevices(Guid[] services = null);   
     }
 }

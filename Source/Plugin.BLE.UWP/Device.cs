@@ -11,10 +11,12 @@ using Plugin.BLE.Extensions;
 
 namespace Plugin.BLE.UWP
 {
+    //public class Device : DeviceBase<BluetoothLEDevice>
     public class Device : DeviceBase<ObservableBluetoothLEDevice>
     {
-        public Device(Adapter adapter, BluetoothLEDevice nativeDevice, int rssi, Guid id, IReadOnlyList<AdvertisementRecord> advertisementRecords = null) 
+        public Device(Adapter adapter, BluetoothLEDevice nativeDevice, int rssi, Guid id, IReadOnlyList<AdvertisementRecord> advertisementRecords = null)
             : base(adapter, new ObservableBluetoothLEDevice(nativeDevice.DeviceInformation))
+            //: base(adapter, nativeDevice)
         {
             Rssi = rssi;
             Id = id;
@@ -41,6 +43,7 @@ namespace Plugin.BLE.UWP
         protected override async Task<IReadOnlyList<IService>> GetServicesNativeAsync()
         {
             var result = await NativeDevice.BluetoothLEDevice.GetGattServicesAsync(BleImplementation.CacheModeGetServices);
+            //var result = await NativeDevice.GetGattServicesAsync(BleImplementation.CacheModeGetServices);
             result.ThrowIfError();
 
             return result.Services?
@@ -52,6 +55,7 @@ namespace Plugin.BLE.UWP
         protected override async Task<IService> GetServiceNativeAsync(Guid id)
         {
             var result = await NativeDevice.BluetoothLEDevice.GetGattServicesForUuidAsync(id, BleImplementation.CacheModeGetServices);
+            //var result = await NativeDevice.GetGattServicesForUuidAsync(id, BleImplementation.CacheModeGetServices);
             result.ThrowIfError();
 
             var nativeService = result.Services?.FirstOrDefault();
@@ -60,11 +64,13 @@ namespace Plugin.BLE.UWP
 
         protected override DeviceState GetState()
         {
+            //if (NativeDevice.ConnectionStatus == BluetoothConnectionStatus.Connected)
             if (NativeDevice.IsConnected)
             {
                 return DeviceState.Connected;
             }
 
+            //return NativeDevice.WasSecureConnectionUsedForPairing ? DeviceState.Limited : DeviceState.Disconnected;
             return NativeDevice.IsPaired ? DeviceState.Limited : DeviceState.Disconnected;
         }
 

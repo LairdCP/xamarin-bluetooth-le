@@ -13,6 +13,7 @@ using Windows.Devices.Bluetooth.Advertisement;
 using Plugin.BLE.Abstractions;
 using Plugin.BLE.Abstractions.Contracts;
 using Plugin.BLE.Extensions;
+using Windows.Devices.Bluetooth.GenericAttributeProfile;
 
 namespace Plugin.BLE.UWP
 {
@@ -24,6 +25,10 @@ namespace Plugin.BLE.UWP
         public Adapter(BluetoothLEHelper bluetoothHelper)
         {
             _bluetoothHelper = bluetoothHelper;
+        }
+
+        public Adapter()
+        {
         }
 
         protected override Task StartScanningForDevicesNativeAsync(Guid[] serviceUuids, bool allowDuplicatesKey, CancellationToken scanCancellationToken)
@@ -65,16 +70,59 @@ namespace Plugin.BLE.UWP
         {
             Trace.Message($"Connecting to device with ID:  {device.Id.ToString()}");
 
+            //if (!(device.NativeDevice is BluetoothLEDevice nativeDevice))
             if (!(device.NativeDevice is ObservableBluetoothLEDevice nativeDevice))
                 return;
 
             nativeDevice.PropertyChanged -= Device_ConnectionStatusChanged;
             nativeDevice.PropertyChanged += Device_ConnectionStatusChanged;
 
+            //BluetoothLEDevice bled = await BluetoothLEDevice.FromIdAsync(nativeDevice.DeviceId);
+            //nativeDevice = await BluetoothLEDevice.FromIdAsync(nativeDevice.DeviceId);
+            //nativeDevice.ConnectionStatusChanged -= NativeDevice_ConnectionStatusChanged;
+            //nativeDevice.ConnectionStatusChanged += NativeDevice_ConnectionStatusChanged;
+            
             ConnectedDeviceRegistry[device.Id.ToString()] = device;
 
             await nativeDevice.ConnectAsync();
+
+            //GattDeviceServicesResult result = await nativeDevice.GetGattServicesAsync(BluetoothCacheMode.Uncached);
+
+            //if (result.Status == GattCommunicationStatus.Success)
+            //{
+            //    var services = result.Services;
+            //    Trace.Message(String.Format("Found {0} services", services.Count));
+            //    foreach (var service in services)
+            //    {
+            //        Trace.Message(service.Uuid.ToString());
+            //    }
+            //}
         }
+
+        //private void NativeDevice_ConnectionStatusChanged(BluetoothLEDevice sender, object args)
+        //{
+        //    if (!(sender is BluetoothLEDevice nativeDevice) || nativeDevice == null)
+        //    {
+        //        return;
+        //    }
+
+        //    //if (propertyChangedEventArgs.PropertyName != nameof(nativeDevice.IsConnected))
+        //    //{
+        //    //    return;
+        //    //}
+
+        //    var address = ParseDeviceId(nativeDevice.BluetoothAddress).ToString();
+        //    if (nativeDevice.ConnectionStatus == BluetoothConnectionStatus.Connected && ConnectedDeviceRegistry.TryGetValue(address, out var connectedDevice))
+        //    {
+        //        HandleConnectedDevice(connectedDevice);
+        //        return;
+        //    }
+
+        //    if ((nativeDevice.ConnectionStatus == BluetoothConnectionStatus.Connected) && ConnectedDeviceRegistry.TryRemove(address, out var disconnectedDevice))
+        //    {
+        //        HandleDisconnectedDevice(false, disconnectedDevice);
+        //    }
+        //}
 
         private void Device_ConnectionStatusChanged(object sender, PropertyChangedEventArgs propertyChangedEventArgs)
         {
@@ -103,13 +151,22 @@ namespace Plugin.BLE.UWP
 
         protected override void DisconnectDeviceNative(IDevice device)
         {
+
+            _bluetoothHelper.BluetoothLeDevices.Clear();
+            _bluetoothHelper.StopEnumeration();
+            _bluetoothHelper = null;
             // Windows doesn't support disconnecting, so currently just dispose of the device
             Trace.Message($"Disconnected from device with ID:  {device.Id.ToString()}");
 
             ((Device)device).DisposeServices();
+            //if (device.NativeDevice is BluetoothLEDevice nativeDevice)
             if (device.NativeDevice is ObservableBluetoothLEDevice nativeDevice)
             {
+                //nativeDevice.Dispose();
                 nativeDevice.BluetoothLEDevice.Dispose();
+                System.GC.Collect();
+                //nativeDevice = null;
+                Trace.Message($"Native Device Dispose.");
                 ConnectedDeviceRegistry.TryRemove(device.Id.ToString(), out _);
             }
 
@@ -192,5 +249,6 @@ namespace Plugin.BLE.UWP
             macBytes.CopyTo(deviceGuid, 10);
             return new Guid(deviceGuid);
         }
+        
     }
 }
